@@ -84,7 +84,7 @@ allowed_badges = ['broadcaster','moderator','vip']
 
 @bot.event
 async def event_message(message):
-    print(f"{message.author.name}\n {message.author.badges}: {message.content}\n\n")
+    print(f"{message.author.display_name}\n {message.author.badges}: {message.content}\n\n")
 
     if not allowed_badges:
         get_profile_picture(message.author.badges)
@@ -93,10 +93,8 @@ async def event_message(message):
     for badge in allowed_badges:
         if badge in message.author.badges:
             get_profile_picture(message.author.badges)
-            send_message(message.author.name, f"{message.content}", get_profile_picture(message.author.name))
+            send_message(message.author.display_name, f"{message.content}", get_profile_picture(message.author.name))
 
 
 
 bot.run()
-
-
