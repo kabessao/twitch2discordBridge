@@ -1,9 +1,7 @@
 # twitch2discordBridge
 replicates twitch chat into a discord chat through webhooks
 
-
-for getting the tiwtch credentials you will need to create a tiwtch bot
-then go to https://twitchapps.com/tmi/ to get your oauth key.
+you will need to create a twitch bot to use it.
 
 if you leave the `OAuth Redirect url's` empty on the bot creator you'll need to use your own credentials. It's weird, I know.
 
