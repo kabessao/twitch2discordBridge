@@ -86,10 +86,6 @@ allowed_badges = ['broadcaster','moderator','vip']
 async def event_message(message):
     print(f"{message.author.name}\n {message.author.badges}: {message.content}\n\n")
 
-    # import pdb; pdb.set_trace()
-    # if (message.author.name != channel):
-    #     returno
-
     if not allowed_badges:
         get_profile_picture(message.author.badges)
         send_message(message.author.name, f"{message.content}", get_profile_picture(message.author.name))
