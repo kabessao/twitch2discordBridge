@@ -6,7 +6,6 @@ import json
 import yaml
 import re
 
-
 # this bit loads the config file. If it isn't available it creates the file and quits
 try:
     with open("config.yaml", "r") as config_file:
@@ -16,7 +15,6 @@ except FileNotFoundError:
     config_text = """
 webhook_url: 'DISCORD WEBHOOK URL'
 twitch_client_id: 'YOUR TWITCH ID'
-twitch_client_secret: 'YOUR TWITCH SECRET'
 twitch_username: 'YOUR TWITCH USERNAME'
 oauth_password: 'YOUR TWITCH OAUTH PASSWORD (NOT YOUR REAL PASSWORD)'
 channel: 'THE CHANNEL NAME'
@@ -49,9 +47,26 @@ filter_messages:
 
 
 # just a simple log method
-def log(message):
+def log(message, max_size=30 * 1024):
     with open("log.txt", "a") as myfile:
         myfile.write(message)
+    
+    # Check the file size
+    file_size = os.path.getsize("log.txt")
+    
+    # If the file size exceeds the maximum allowed size
+    if file_size > max_size:
+        with open("log.txt", "r") as file:
+            # Read all the lines from the log file
+            lines = file.readlines()
+        
+        # Remove the oldest entries by keeping the most recent ones
+        num_lines_to_keep = 10000  # Specify the number of recent entries to keep
+        lines = lines[-num_lines_to_keep:]
+        
+        # Rewrite the log file with the most recent entries
+        with open("log.txt", "w") as file:
+            file.writelines(lines)
 
 
 # this sends a message to the configured discord webhook
@@ -76,7 +91,7 @@ def get_profile_picture(username):
     payload = {}
     headers = {
     'Client-ID': config['twitch_client_id'],
-    'Authorization': f'Bearer {config["oauth_password"].replace("oauth:","")}'
+    'Authorization': f'Bearer {config["oauth_password"]}'
     }
 
     response = requests.request("GET", url, headers=headers, data=payload)
@@ -89,7 +104,7 @@ def get_profile_picture(username):
 
 # this is the configuration of the twitch bot
 bot = commands.Bot(
-    irc_token=config['oauth_password'],
+    irc_token=f"oauth:{config['oauth_password']}",
     client_id=config['twitch_client_id'],
     nick=config['twitch_username'],
     prefix="!",
@@ -100,7 +115,7 @@ bot = commands.Bot(
 # twitch bot event for when the connection is successfull
 @bot.event
 async def event_ready():
-    print(f"chat replay of {config['channel']}\n\n=====================================")
+    print(f"connected successfully to {config['channel']}")
 
 
 
@@ -108,8 +123,7 @@ async def event_ready():
 # twitch bot event for when a message is sent 
 @bot.event
 async def event_message(message):
-    log_message = f"{message.author.name} ({message.author.display_name})\n {message.author.badges}: {message.content}\n\n"
-    print(log_message)
+    log_message = f"{message.author.name} ({message.author.display_name})\n{message.author.badges}: {message.content}\n\n"
     log(log_message)
 
     filter_badges = config['filter_badges'] if 'filter_badges' in config else []
