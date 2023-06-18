@@ -22,4 +22,4 @@ filter_usernames:
 
 # this uses regex. Go nuts 
 filter_messages:
-  - 'Cheer\d+' # this detects any cheer people sends
+  - 'Cheer\d' # this detects any cheer people sends
