@@ -1,0 +1,25 @@
+
+webhook_url: 'DISCORD WEBHOOK URL'
+twitch_client_id: 'YOUR TWITCH ID'
+twitch_username: 'YOUR TWITCH USERNAME'
+oauth_password: 'YOUR TWITCH OAUTH PASSWORD (NOT YOUR REAL PASSWORD)'
+channel: 'THE CHANNEL NAME'
+
+# any configuration bellow is not mandatory, you can delete any of the tags if you're not gonna use it 
+
+# filtering by badges only work if the badge is visible.
+# you can check the log.txt to see what badges are being used by users
+filter_badges: 
+  - broadcaster
+  - vip
+  - moderator
+
+# this uses the username, not the display name.
+# in the log.txt it will be like this: 
+# USERNAME (DISPLAY_NAME)
+filter_usernames: 
+   - cyberdruga
+
+# this uses regex. Go nuts 
+filter_messages:
+  - 'Cheer\d+.*' # this detects any cheer people sends
