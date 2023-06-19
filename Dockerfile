@@ -10,8 +10,11 @@ COPY requirements.txt .
 # Install the Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the Python script and configuration files to the container
-COPY . .
+# Copy the configuration file to the container
+COPY config.yaml .
+
+# Copy the Python script to the container
+COPY bot.py .
 
 # Set the entry point for the container
 CMD ["python", "bot.py"]
