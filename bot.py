@@ -4,50 +4,19 @@ import json
 import requests
 import json
 import yaml
-import re
+import regex as re
 
-# this bit loads the config file. If it isn't available it creates the file and quits
+# this bit loads the config file. If not present it prompts the user to create one
 try:
     with open("config.yaml", "r") as config_file:
         config = yaml.safe_load(config_file)
 except FileNotFoundError:
-    # If the config file doesn't exist, create a default one and quit
-    config_text = """
-webhook_url: 'DISCORD WEBHOOK URL'
-twitch_client_id: 'YOUR TWITCH ID'
-twitch_username: 'YOUR TWITCH USERNAME'
-oauth_password: 'YOUR TWITCH OAUTH PASSWORD (NOT YOUR REAL PASSWORD)'
-channel: 'THE CHANNEL NAME'
-
-# any configuration bellow is not mandatory, you can delete any of the tags if you're not gonna use it 
-
-# filtering by badges only work if the badge is visible.
-# you can check the log.txt to see what badges are being used by users
-filter_badges: 
-  - broadcaster
-  - vip
-  - moderator
-
-# this uses the username, not the display name.
-# in the log.txt it will be like this: 
-# USERNAME (DISPLAY_NAME)
-filter_usernames: 
-   - cyberdruga
-
-# this uses regex. Go nuts 
-filter_messages:
-  - 'Cheer\d+.*' # this detects any cheer people sends
-"""
-    
-    with open("config.yaml", "w") as text_file:
-        text_file.write(config_text)
-    
-    print("Config file created. Please fill in the required information.")
+    print("Please fill in the required information in a 'config.yaml' file.")
     quit()
 
 
-# just a simple log method
-def log(message, max_size=30 * 1024):
+# log method, that keeps the log file in a fixed size
+def log(message, max_size=30 * 1024, num_lines_to_keep=50000):
     with open("log.txt", "a") as myfile:
         myfile.write(message)
     
@@ -61,7 +30,6 @@ def log(message, max_size=30 * 1024):
             lines = file.readlines()
         
         # Remove the oldest entries by keeping the most recent ones
-        num_lines_to_keep = 10000  # Specify the number of recent entries to keep
         lines = lines[-num_lines_to_keep:]
         
         # Rewrite the log file with the most recent entries
@@ -90,8 +58,8 @@ def get_profile_picture(username):
 
     payload = {}
     headers = {
-    'Client-ID': config['twitch_client_id'],
-    'Authorization': f'Bearer {config["oauth_password"]}'
+        'Client-ID': config['twitch_client_id'],
+        'Authorization': f'Bearer {config["oauth_password"]}'
     }
 
     response = requests.request("GET", url, headers=headers, data=payload)
@@ -112,23 +80,55 @@ bot = commands.Bot(
 )
 
 
+# this only translate emotes that twitch says the user can use
+def parse_emotes(message, emotes):
+    
+    msg = message.content
+
+    if not message.tags['emotes']: return msg
+
+    # this is an example:
+    # message.content = 'henyatDance henyatKettle henyatDance'
+    positional_emotes = message.tags['emotes']
+    # 'emotesv2_2982b2a2007d4f17844d974f079a8866:0-10,25-35/emotesv2_73c1c0df74cb43ae883d0869bc710f44:12-23'
+    positional_emotes = positional_emotes.split('/')
+    # ['emotesv2_2982b2a2007d4f17844d974f079a8866:0-10,25-35','emotesv2_73c1c0df74cb43ae883d0869bc710f44:12-23']
+    positional_emotes = [ item.split(':')[1] for item in positional_emotes]
+    # ['0-10,25-35','12-23']
+    positional_emotes = [ item.split(',')[0] for item in positional_emotes]
+    # ['0-10','12-23']
+    positional_emotes = [ item.split('-') for item in positional_emotes]
+    # [['0','10'],['12','23']]
+    positional_emotes = [ [int(i) for i in item] for item in positional_emotes]
+    # [[0,10],[12,23]]
+    positional_emotes = [ message.content[item[0]:item[1]+1] for item in positional_emotes]
+    # ['henyatDance','henyatKettle']
+
+    for emote in positional_emotes:
+        if emote in emotes:
+            msg = re.sub(r"(?<=^|\W)"+emote+r"(?=\W|$)",emotes[emote], msg)
+
+    return msg
+
+
+filter_badges = config['filter_badges'] if 'filter_badges' in config and config['filter_badges'] else []
+filter_usernames = config['filter_usernames'] if 'filter_usernames' in config and config['filter_usernames'] else []
+filter_messages = config['filter_messages'] if 'filter_messages' in config and config['filter_messages'] else []
+emotes = config['emote_translator'] if 'emote_translator' in config and config['emote_translator'] else []
+show_bit_gifters = 'show_bit_gifters' in config and config['show_bit_gifters']
+
+
 # twitch bot event for when the connection is successfull
 @bot.event
 async def event_ready():
     print(f"connected successfully to {config['channel']}")
 
 
-
-
 # twitch bot event for when a message is sent 
 @bot.event
 async def event_message(message):
-    log_message = f"{message.author.name} ({message.author.display_name})\n{message.author.badges}: {message.content}\n\n"
+    log_message = f"{message.author.name} ({message.author.display_name})\n{message.tags}\n{message.content}\n\n"
     log(log_message)
-
-    filter_badges = config['filter_badges'] if 'filter_badges' in config else []
-    filter_usernames = config['filter_usernames'] if 'filter_usernames' in config else []
-    filter_messages = config['filter_messages'] if 'filter_messages' in config else []
 
     should_send = not (filter_badges or filter_usernames or filter_messages)
 
@@ -146,9 +146,14 @@ async def event_message(message):
         if re.compile(regex).match(message.content):
             should_send = True
 
+    if show_bit_gifters and 'bits' in message.tags:
+        should_send = True
+
 
     if should_send:
-        send_message(message.author.display_name, f"{message.content}", get_profile_picture(message.author.name))
+        msg = message.content if not emotes else parse_emotes(message, emotes)
+        
+        send_message(message.author.display_name, msg, get_profile_picture(message.author.name))
 
 
 bot.run()
