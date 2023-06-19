@@ -7,6 +7,9 @@ channel: 'THE CHANNEL NAME'
 
 # any configuration bellow is not mandatory, you can delete any of the tags if you're not gonna use it 
 
+# filters the message with Bits
+show_bit_gifters: true
+
 # filtering by badges only work if the badge is visible.
 # you can check the log.txt to see what badges are being used by users
 filter_badges: 
@@ -18,8 +21,19 @@ filter_badges:
 # in the log.txt it will be like this: 
 # USERNAME (DISPLAY_NAME)
 filter_usernames: 
-   - cyberdruga
+  - soundalerts
 
 # this uses regex. Go nuts 
 filter_messages:
-  - 'Cheer\d' # this detects any cheer people sends
+  - 'Cheer\d+.*' # this detects any cheer people sends
+
+# this translates twitch emotes to an equivalent you might have on your server, or any server.
+# you can create a server for just dumping twitch emotes if you don't want them to clog your original one.
+# no nitro needed
+#
+# To get these codes you can use \ before the emote ( \:HenyaDance: )
+emote_translator:
+  'henyatDance': '<a:HenyaDance:1107237388587114567>'
+  'henyatKettle': '<:henyaKettle:1108918704747577425>'
+  'henyatHenyaheart': '<:HenyaHeart:1107237396036190270>'
+  'henyatZoom': '<:henyaZoom:1107237413656481884>'
