@@ -1,3 +1,4 @@
 twitchio==1.2.0
 PyYAML==6.0
 requests==2.28.1
+regex==2022.10.31
