@@ -15,5 +15,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Build the Docker image
+    - name: copy config files 
       run: cp ~/configs/* .
+
+    - name: Build and run the images 
+      run: make
