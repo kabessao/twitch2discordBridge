@@ -10,11 +10,14 @@ COPY requirements.txt .
 # Install the Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the configuration file to the container
-COPY config.yaml .
+# ARG statement to declare the build argument
+ARG CONFIG=config
 
 # Copy the Python script to the container
 COPY bot.py .
+
+# Copy the configuration file to the container
+COPY ${CONFIG}.yaml ./config.yaml
 
 # Set the entry point for the container
 CMD ["python", "bot.py"]

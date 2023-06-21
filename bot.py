@@ -1,22 +1,55 @@
 import os
-from twitchio.ext import commands
 import json
 import requests
 import json
 import yaml
 import regex as re
+import sys
+from twitchio.ext import commands
+from multiprocessing import Process, Manager
+from time import sleep
 
 # this bit loads the config file. If not present it prompts the user to create one
+config = None
 try:
     with open("config.yaml", "r") as config_file:
         config = yaml.safe_load(config_file)
 except FileNotFoundError:
-    print("Please fill in the required information in a 'config.yaml' file.")
+    print("Please fill in the required information in a 'config.yaml' file.", file=sys.stderr)
     quit()
 
 
+manager = Manager()
+config = manager.dict(config)
+
+
+# this bit loads the emotes file from the web
+emote_config = None
+def load_emotes_url(config): 
+    while True:
+        try: 
+            response = requests.get(config['emote_translator_url'])
+
+            if 200 <= response.status_code <= 299:
+                tmp = yaml.safe_load(response.text)
+                config['emote_translator'] = tmp['emote_translator']
+
+        except:
+            print("failed to load emote_translator from the web")
+        sleep(10)
+
+
+if 'emote_translator_url' in config:
+    Process(target=load_emotes_url, args=(config,)).start()
+
 # log method, that keeps the log file in a fixed size
-def log(message, max_size=30 * 1024, num_lines_to_keep=50000):
+def log(message, max_size=30 * 1024, num_lines_to_keep=1000):
+
+    print(message)
+
+    if 'log_file' in config and not config['log_file']:
+        return
+
     with open("log.txt", "a") as myfile:
         myfile.write(message)
     
@@ -75,7 +108,7 @@ bot = commands.Bot(
     irc_token=f"oauth:{config['oauth_password']}",
     client_id=config['twitch_client_id'],
     nick=config['twitch_username'],
-    prefix="!",
+    prefix="=",
     initial_channels=[config['channel']]
 )
 
@@ -110,25 +143,33 @@ def parse_emotes(message, emotes):
 
     return msg
 
-
+emotes = config['emote_translator'] if 'emote_translator' in config and config['emote_translator'] else []
 filter_badges = config['filter_badges'] if 'filter_badges' in config and config['filter_badges'] else []
 filter_usernames = config['filter_usernames'] if 'filter_usernames' in config and config['filter_usernames'] else []
 filter_messages = config['filter_messages'] if 'filter_messages' in config and config['filter_messages'] else []
-emotes = config['emote_translator'] if 'emote_translator' in config and config['emote_translator'] else []
 show_bit_gifters = 'show_bit_gifters' in config and config['show_bit_gifters']
+
+
+message_history = [] 
 
 
 # twitch bot event for when the connection is successfull
 @bot.event
 async def event_ready():
-    print(f"connected successfully to {config['channel']}")
+    log(f"connected successfully to {config['channel']}")
 
 
 # twitch bot event for when a message is sent 
 @bot.event
 async def event_message(message):
+    global config
     log_message = f"{message.author.name} ({message.author.display_name})\n{message.tags}\n{message.content}\n\n"
     log(log_message)
+
+    message_history.append(message)
+
+    if len(message_history) > 800:
+        message_history.pop(0)
 
     should_send = not (filter_badges or filter_usernames or filter_messages)
 
@@ -152,8 +193,40 @@ async def event_message(message):
 
     if should_send:
         msg = message.content if not emotes else parse_emotes(message, emotes)
+
+        name = message.author.display_name
+
+        if re.match(r'[^\x20-\x7F]',name):
+            name = f'{message.author.name} ({name})'
         
-        send_message(message.author.display_name, msg, get_profile_picture(message.author.name))
+        send_message(name, msg, get_profile_picture(message.author.name))
+    
+    
+if 'mod_actions' in config and config['mod_actions']:
+    @bot.event
+    async def event_clearchat(data):
+        if 'ban-duration' not in data.tags:
+            return
+
+        id =data.tags['target-user-id']
+        messages = message_history.copy()
+
+        messages = [ item for item in messages if item.tags['user-id'] == id ]
+
+        if not messages:
+            return
+
+        name = messages[0].author.name
+        display_name = messages[0].author.display_name
+
+        send_message(display_name, f"`user got timed out for {data.tags['ban-duration']} seconds`", get_profile_picture(name))
+
+        log(f"{data.tags=}")
+            
+        for message in messages:
+            msg = message.content if not emotes else parse_emotes(message, emotes)
+            
+            send_message(message.author.display_name, msg, get_profile_picture(message.author.name))
 
 
 bot.run()
