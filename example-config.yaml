@@ -54,5 +54,3 @@ channel: 'THE CHANNEL NAME'
 # Just beware that when using github the raw file is kept in cache for 3 minutes.
 # so you'll only see a change in around 3 minutes after updating it on github.
 #emote_translator_url: 'https://raw.githubusercontent.com/kabessao/twitch2discordBridge-HenyaEmotes/main/emotes.yaml'
-
-
