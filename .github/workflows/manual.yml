@@ -20,4 +20,4 @@ jobs:
     steps:
     # Runs a single command using the runners shell
     - name: pull project
-      uses: action/checkout@v1
+      uses: action/pull@v3
