@@ -1,4 +1,3 @@
-
 webhook_url: 'DISCORD WEBHOOK URL'
 twitch_client_id: 'YOUR TWITCH ID'
 twitch_username: 'YOUR TWITCH USERNAME'
@@ -6,34 +5,53 @@ oauth_password: 'YOUR TWITCH OAUTH PASSWORD (NOT YOUR REAL PASSWORD)'
 channel: 'THE CHANNEL NAME'
 
 # any configuration bellow is not mandatory, you can delete any of the tags if you're not gonna use it 
+# HOWEVER, it's important to note that the bot is incredibly slow when running without filters 
 
 # filters the message with Bits
-show_bit_gifters: true
+#show_bit_gifters: true
+
+# shold create a log.txt file 
+#log_file: false
+
+# records sent messages and display them whenever someone gets timed out / banned
+#mod_actions: true
 
 # filtering by badges only work if the badge is visible.
 # you can check the log.txt to see what badges are being used by users
-filter_badges: 
-  - broadcaster
-  - vip
-  - moderator
+# Ex.: you have a filter for `verified`, but then a verified gifted 1000 bits. 
+# Now that verified has a `1000 gifter` badge in place of the `verified` one and won't show anymore.
+#filter_badges: 
+#  - broadcaster
+#  - vip
+#  - moderator
 
 # this uses the username, not the display name.
 # in the log.txt it will be like this: 
 # USERNAME (DISPLAY_NAME)
-filter_usernames: 
-  - soundalerts
+#filter_usernames: 
+#  - soundalerts
 
 # this uses regex. Go nuts 
-filter_messages:
-  - 'Cheer\d+.*' # this detects any cheer people sends
+#filter_messages:
+#  - '[^\x20-\x7F]' # this regex detects any message that uses non roman characters, like Chinese, Japanese, etc.
 
 # this translates twitch emotes to an equivalent you might have on your server, or any server.
 # you can create a server for just dumping twitch emotes if you don't want them to clog your original one.
 # no nitro needed
+# this only translates twitch emotes by looking at what emotes people can use
 #
 # To get these codes you can use \ before the emote ( \:HenyaDance: )
-emote_translator:
-  'henyatDance': '<a:HenyaDance:1107237388587114567>'
-  'henyatKettle': '<:henyaKettle:1108918704747577425>'
-  'henyatHenyaheart': '<:HenyaHeart:1107237396036190270>'
-  'henyatZoom': '<:henyaZoom:1107237413656481884>'
+
+#emote_translator:
+#  'henyatDance': '<a:HenyaDance:1107237388587114567>'
+#  'henyatKettle': '<:henyaKettle:1108918704747577425>'
+#  'henyatHenyaheart': '<:HenyaHeart:1107237396036190270>'
+#  'henyatZoom': '<:henyaZoom:1107237413656481884>'
+
+# or you can create a separate file with the same content and host it on the web.
+# You can upload your file into a github repo, get the raw link, and use it here
+# that the bot will try to update it every 10 seconds.
+# Just beware that when using github the raw file is kept in cache for 3 minutes.
+# so you'll only see a change in around 3 minutes after updating it on github.
+#emote_translator_url: 'https://raw.githubusercontent.com/kabessao/twitch2discordBridge-HenyaEmotes/main/emotes.yaml'
+

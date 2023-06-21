@@ -1,0 +1,17 @@
+
+services:
+  twitch2discord-bridge:
+    logging:
+      options:
+        max-size: 500m
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+      args:
+        - CONFIG=${TAG:-config}
+
+    restart: always
+    image: twitch2discord-bridge:${TAG:-default}
+    container_name: t2d_${TAG:-bot}
+    
