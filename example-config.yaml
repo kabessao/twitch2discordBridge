@@ -17,6 +17,9 @@ channel: 'THE CHANNEL NAME'
 #show_bit_gifters: true 
 #show_bit_gifters: 500 # will show only gifts equal or above 500 bits 
 
+# filters hyper messages
+#show_hyber_chat: true
+
 # should create a log.txt file 
 #log_file: false
 
