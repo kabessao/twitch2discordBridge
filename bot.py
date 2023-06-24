@@ -151,7 +151,6 @@ def parse_bits(message):
 
     return re.sub(r"(?<=^|\W)[Cc]heer\d+(\W|$)",'', message).strip(), bits
 
-emotes = config['emote_translator'] if 'emote_translator' in config and config['emote_translator'] else []
 filter_badges = config['filter_badges'] if 'filter_badges' in config and config['filter_badges'] else []
 filter_usernames = config['filter_usernames'] if 'filter_usernames' in config and config['filter_usernames'] else []
 filter_messages = config['filter_messages'] if 'filter_messages' in config and config['filter_messages'] else []
@@ -179,6 +178,8 @@ async def event_message(message):
     name = message.author.display_name
 
     message_history.append(message)
+
+    emotes = config['emote_translator'] if 'emote_translator' in config and config['emote_translator'] else []
 
     if len(message_history) > 800:
         message_history.pop(0)
