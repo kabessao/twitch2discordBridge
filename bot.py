@@ -137,7 +137,7 @@ def parse_emotes(message, tags, emotes):
 
     for emote in positional_emotes:
         if emote in emotes:
-            message = re.sub(r"(?<=^|\W)"+emote+r"(?=\W|$)",emotes[emote], msg)
+            message = re.sub(r"(?<=^|\W)"+emote+r"(?=\W|$)",emotes[emote], message)
 
     return message
 
@@ -204,6 +204,9 @@ async def event_message(message):
         name = f"{name} gave {bits} bit{'s' if bits > 1 else ''}"
  
         should_send = True
+
+        if not msg:
+            msg = "`empty message`"
         if show_bit_gifters is int:
             should_send = message.tags['bits'] >= show_bit_gifters
 
@@ -226,6 +229,8 @@ if 'mod_actions' in config and config['mod_actions']:
     async def event_clearchat(data):
         if 'ban-duration' not in data.tags:
             return
+
+        emotes = config['emote_translator'] if 'emote_translator' in config and config['emote_translator'] else []
 
         id =data.tags['target-user-id']
         messages = message_history.copy()
