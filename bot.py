@@ -114,15 +114,13 @@ bot = commands.Bot(
 
 
 # this only translate emotes that twitch says the user can use
-def parse_emotes(message, emotes):
+def parse_emotes(message, tags, emotes):
     
-    msg = message.content
-
-    if not message.tags['emotes']: return msg
+    if not tags['emotes']: return message
 
     # this is an example:
     # message.content = 'henyatDance henyatKettle henyatDance'
-    positional_emotes = message.tags['emotes']
+    positional_emotes = tags['emotes']
     # 'emotesv2_2982b2a2007d4f17844d974f079a8866:0-10,25-35/emotesv2_73c1c0df74cb43ae883d0869bc710f44:12-23'
     positional_emotes = positional_emotes.split('/')
     # ['emotesv2_2982b2a2007d4f17844d974f079a8866:0-10,25-35','emotesv2_73c1c0df74cb43ae883d0869bc710f44:12-23']
@@ -134,14 +132,14 @@ def parse_emotes(message, emotes):
     # [['0','10'],['12','23']]
     positional_emotes = [ [int(i) for i in item] for item in positional_emotes]
     # [[0,10],[12,23]]
-    positional_emotes = [ message.content[item[0]:item[1]+1] for item in positional_emotes]
+    positional_emotes = [ message[item[0]:item[1]+1] for item in positional_emotes]
     # ['henyatDance','henyatKettle']
 
     for emote in positional_emotes:
         if emote in emotes:
-            msg = re.sub(r"(?<=^|\W)"+emote+r"(?=\W|$)",emotes[emote], msg)
+            message = re.sub(r"(?<=^|\W)"+emote+r"(?=\W|$)",emotes[emote], msg)
 
-    return msg
+    return message
 
 
 def parse_bits(message):
@@ -197,7 +195,7 @@ async def event_message(message):
             break
 
     for regex in filter_messages:
-        if re.compile(regex).match(message.content):
+        if re.compile(regex).match(msg):
             should_send = True
 
     if show_bit_gifters and 'bits' in message.tags:
@@ -215,7 +213,7 @@ async def event_message(message):
         should_send = True
 
     if should_send:
-        msg = msg if not emotes else parse_emotes(message, emotes)
+        msg = msg if not emotes else parse_emotes(msg, message.tags, emotes)
 
         if re.match(r'[^\x20-\x7F]',name):
             name = f'{message.author.name} ({name})'
