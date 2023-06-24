@@ -143,11 +143,19 @@ def parse_emotes(message, emotes):
 
     return msg
 
-emotes = config['emote_translator'] if 'emote_translator' in config and config['emote_translator'] else []
+
+def parse_bits(message):
+    bits = re.findall(r"(?<=^|\W)[Cc]heer(\d+)(?=\W|$)", message)
+    bits = [ int(item) for item in bits ]
+    bits = sum(bits)
+
+    return re.sub(r"(?<=^|\W)[Cc]heer\d+(\W|$)",'', message).strip(), bits
+
 filter_badges = config['filter_badges'] if 'filter_badges' in config and config['filter_badges'] else []
 filter_usernames = config['filter_usernames'] if 'filter_usernames' in config and config['filter_usernames'] else []
 filter_messages = config['filter_messages'] if 'filter_messages' in config and config['filter_messages'] else []
-show_bit_gifters = 'show_bit_gifters' in config and config['show_bit_gifters']
+show_bit_gifters = config['show_bit_gifters'] if 'show_bit_gifters' in config else False
+show_hyber_chat = config['show_hyber_chat'] if 'show_hyber_chat' in config else False
 
 
 message_history = [] 
@@ -166,12 +174,17 @@ async def event_message(message):
     log_message = f"{message.author.name} ({message.author.display_name})\n{message.tags}\n{message.content}\n\n"
     log(log_message)
 
+    msg = message.content
+    name = message.author.display_name
+
     message_history.append(message)
+
+    emotes = config['emote_translator'] if 'emote_translator' in config and config['emote_translator'] else []
 
     if len(message_history) > 800:
         message_history.pop(0)
 
-    should_send = not (filter_badges or filter_usernames or filter_messages)
+    should_send = 'send_all_messages' in config and config['send_all_messages']
 
     for badge in filter_badges:
         if badge in message.author.badges:
@@ -188,17 +201,25 @@ async def event_message(message):
             should_send = True
 
     if show_bit_gifters and 'bits' in message.tags:
+        msg, bits = parse_bits(msg)
+
+        name = f"{name} gave {bits} bit{'s' if bits > 1 else ''}"
+ 
+        should_send = True
+        if show_bit_gifters is int:
+            should_send = message.tags['bits'] >= show_bit_gifters
+
+    if show_hyber_chat and 'pinned-chat-paid-amount' in message.tags:
+        bits = message.tags['pinned-chat-paid-amount']
+        name = f"{name} sent a Hype Chat for {bits} bits"
         should_send = True
 
-
     if should_send:
-        msg = message.content if not emotes else parse_emotes(message, emotes)
-
-        name = message.author.display_name
+        msg = msg if not emotes else parse_emotes(message, emotes)
 
         if re.match(r'[^\x20-\x7F]',name):
             name = f'{message.author.name} ({name})'
-        
+
         send_message(name, msg, get_profile_picture(message.author.name))
     
     
