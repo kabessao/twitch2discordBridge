@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 ARG CONFIG=config
 
 # Copy the Python script to the container
-COPY bot.py .
+COPY *.py .
 
 # Copy the configuration file to the container
 COPY ${CONFIG}.yaml ./config.yaml
