@@ -94,11 +94,3 @@ def get_twitch_profile_picture(username, config):
         return json.loads(response.text)["data"][0]["profile_image_url"]
     except:
         return ''
-
-
-def parse_bits(message):
-    bits = re.findall(r"(?<=^|\W)[Cc]heer(\d+)(?=\W|$)", message)
-    bits = [ int(item) for item in bits ]
-    bits = sum(bits)
-
-    return re.sub(r"(?<=^|\W)[Cc]heer\d+(\W|$)",'', message).strip(), bits

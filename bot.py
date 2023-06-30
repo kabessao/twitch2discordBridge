@@ -116,7 +116,8 @@ async def event_message(message):
             should_send = True
 
     if show_bit_gifters and 'bits' in message.tags:
-        msg, bits = parse_bits(msg)
+        msg = re.sub(r"(?<=^|\W)[Cc]heer\d+(\W|$)",'', msg).strip()
+        bits = message.tags['bits']
 
         name = f"{name} gave {bits} bit{'s' if bits > 1 else ''}"
  
