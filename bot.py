@@ -86,8 +86,8 @@ async def event_message(message):
     log_message = f"{message.author.name} ({message.author.display_name})\n{message.tags}\n{message.content}\n\n"
     log(log_message)
 
-    msg = message.content
-    name = message.author.display_name
+    msg = str(message.content)
+    name = str(message.author.display_name)
 
     if re.match(r'[^\x20-\x7F]',name):
         name = f'{message.author.name} ({name})'
