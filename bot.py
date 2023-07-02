@@ -68,6 +68,7 @@ filter_usernames = config['filter_usernames'] if 'filter_usernames' in config an
 filter_messages = config['filter_messages'] if 'filter_messages' in config and config['filter_messages'] else []
 show_bit_gifters = config['show_bit_gifters'] if 'show_bit_gifters' in config else False
 show_hyber_chat = config['show_hyber_chat'] if 'show_hyber_chat' in config else False
+prevent_ping = config['prevent_ping'] if 'prevent_ping' in config else True
 
 
 message_history = []
@@ -135,6 +136,9 @@ async def event_message(message):
 
     if should_send:
         msg = msg if not emotes else parse_emotes(msg, message.tags, emotes)
+
+        if prevent_ping:
+            msg = re.sub(r"@(?=here|everyone)", '', msg)
 
         send_message(name, msg, get_profile_picture(message.author.name))
     
