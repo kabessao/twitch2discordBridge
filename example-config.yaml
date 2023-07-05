@@ -12,6 +12,10 @@ channel: 'THE CHANNEL NAME'
 # Any other filter overrides this option.
 #send_all_messages: true
 
+# this controls the bot's ability to ping @here and @everyone
+# and by default it's set to true
+#prevent_ping: true
+
 # filters the message with Bits
 # alternativelly you can provide a minimum ammount for bit gifts to show up
 #show_bit_gifters: true 

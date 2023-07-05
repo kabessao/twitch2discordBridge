@@ -1,13 +1,13 @@
-import os
-import json
 import requests
-import json
 import yaml
 import regex as re
 import sys
 from twitchio.ext import commands
 from multiprocessing import Process, Manager
 from time import sleep
+
+
+from utils import *
 
 # this bit loads the config file. If not present it prompts the user to create one
 config = None
@@ -24,7 +24,6 @@ config = manager.dict(config)
 
 
 # this bit loads the emotes file from the web
-emote_config = None
 def load_emotes_url(config): 
     while True:
         try: 
@@ -35,72 +34,23 @@ def load_emotes_url(config):
                 config['emote_translator'] = tmp['emote_translator']
 
         except:
-            print("failed to load emote_translator from the web")
+            print("failed to load emote_translator from the web", file=sys.stderr)
         sleep(10)
 
 
 if 'emote_translator_url' in config:
     Process(target=load_emotes_url, args=(config,)).start()
 
-# log method, that keeps the log file in a fixed size
-def log(message, max_size=30 * 1024, num_lines_to_keep=1000):
+def log(message):
+    logger(message,config=config)
 
-    print(message)
-
-    if 'log_file' in config and not config['log_file']:
-        return
-
-    with open("log.txt", "a") as myfile:
-        myfile.write(message)
-    
-    # Check the file size
-    file_size = os.path.getsize("log.txt")
-    
-    # If the file size exceeds the maximum allowed size
-    if file_size > max_size:
-        with open("log.txt", "r") as file:
-            # Read all the lines from the log file
-            lines = file.readlines()
-        
-        # Remove the oldest entries by keeping the most recent ones
-        lines = lines[-num_lines_to_keep:]
-        
-        # Rewrite the log file with the most recent entries
-        with open("log.txt", "w") as file:
-            file.writelines(lines)
-
-
-# this sends a message to the configured discord webhook
 def send_message(username, message, url):
-    payload = {
-        'content': message,
-        'username': username,
-        'avatar_url': url
-    }
-
-    headers = {
-        'Content-Type': 'application/json'
-    }
-
-    response = requests.post(config['webhook_url'], data=json.dumps(payload), headers=headers)
+    send_webhook_message(username, message, url, config)
 
 
 # this is responsible for getting the profile picture of of the user
 def get_profile_picture(username):
-    url = f"https://api.twitch.tv/helix/users?login={username}"
-
-    payload = {}
-    headers = {
-        'Client-ID': config['twitch_client_id'],
-        'Authorization': f'Bearer {config["oauth_password"]}'
-    }
-
-    response = requests.request("GET", url, headers=headers, data=payload)
-
-    try: 
-        return json.loads(response.text)["data"][0]["profile_image_url"]
-    except:
-        return ''
+    return get_twitch_profile_picture(username, config)
 
 
 # this is the configuration of the twitch bot
@@ -113,52 +63,15 @@ bot = commands.Bot(
 )
 
 
-# this only translate emotes that twitch says the user can use
-def parse_emotes(message, emotes):
-    
-    msg = message.content
-
-    if not message.tags['emotes']: return msg
-
-    # this is an example:
-    # message.content = 'henyatDance henyatKettle henyatDance'
-    positional_emotes = message.tags['emotes']
-    # 'emotesv2_2982b2a2007d4f17844d974f079a8866:0-10,25-35/emotesv2_73c1c0df74cb43ae883d0869bc710f44:12-23'
-    positional_emotes = positional_emotes.split('/')
-    # ['emotesv2_2982b2a2007d4f17844d974f079a8866:0-10,25-35','emotesv2_73c1c0df74cb43ae883d0869bc710f44:12-23']
-    positional_emotes = [ item.split(':')[1] for item in positional_emotes]
-    # ['0-10,25-35','12-23']
-    positional_emotes = [ item.split(',')[0] for item in positional_emotes]
-    # ['0-10','12-23']
-    positional_emotes = [ item.split('-') for item in positional_emotes]
-    # [['0','10'],['12','23']]
-    positional_emotes = [ [int(i) for i in item] for item in positional_emotes]
-    # [[0,10],[12,23]]
-    positional_emotes = [ message.content[item[0]:item[1]+1] for item in positional_emotes]
-    # ['henyatDance','henyatKettle']
-
-    for emote in positional_emotes:
-        if emote in emotes:
-            msg = re.sub(r"(?<=^|\W)"+emote+r"(?=\W|$)",emotes[emote], msg)
-
-    return msg
-
-
-def parse_bits(message):
-    bits = re.findall(r"(?<=^|\W)[Cc]heer(\d+)(?=\W|$)", message)
-    bits = [ int(item) for item in bits ]
-    bits = sum(bits)
-
-    return re.sub(r"(?<=^|\W)[Cc]heer\d+(\W|$)",'', message).strip(), bits
-
 filter_badges = config['filter_badges'] if 'filter_badges' in config and config['filter_badges'] else []
 filter_usernames = config['filter_usernames'] if 'filter_usernames' in config and config['filter_usernames'] else []
 filter_messages = config['filter_messages'] if 'filter_messages' in config and config['filter_messages'] else []
 show_bit_gifters = config['show_bit_gifters'] if 'show_bit_gifters' in config else False
 show_hyber_chat = config['show_hyber_chat'] if 'show_hyber_chat' in config else False
+prevent_ping = config['prevent_ping'] if 'prevent_ping' in config else True
 
 
-message_history = [] 
+message_history = []
 
 
 # twitch bot event for when the connection is successfull
@@ -174,8 +87,11 @@ async def event_message(message):
     log_message = f"{message.author.name} ({message.author.display_name})\n{message.tags}\n{message.content}\n\n"
     log(log_message)
 
-    msg = message.content
-    name = message.author.display_name
+    msg = str(message.content)
+    name = str(message.author.display_name)
+
+    if re.match(r'[^\x20-\x7F]',name):
+        name = f'{message.author.name} ({name})'
 
     message_history.append(message)
 
@@ -197,15 +113,19 @@ async def event_message(message):
             break
 
     for regex in filter_messages:
-        if re.compile(regex).match(message.content):
+        if re.compile(regex).match(msg):
             should_send = True
 
     if show_bit_gifters and 'bits' in message.tags:
-        msg, bits = parse_bits(msg)
+        msg = re.sub(r"(?<=^|\W)[Cc]heer\d+(\W|$)",'', msg).strip()
+        bits = message.tags['bits']
 
         name = f"{name} gave {bits} bit{'s' if bits > 1 else ''}"
  
         should_send = True
+
+        if not msg:
+            msg = "`empty message`"
         if show_bit_gifters is int:
             should_send = message.tags['bits'] >= show_bit_gifters
 
@@ -215,10 +135,10 @@ async def event_message(message):
         should_send = True
 
     if should_send:
-        msg = msg if not emotes else parse_emotes(message, emotes)
+        msg = msg if not emotes else parse_emotes(msg, message.tags, emotes)
 
-        if re.match(r'[^\x20-\x7F]',name):
-            name = f'{message.author.name} ({name})'
+        if prevent_ping:
+            msg = re.sub(r"@(?=here|everyone)", '', msg)
 
         send_message(name, msg, get_profile_picture(message.author.name))
     
@@ -226,8 +146,13 @@ async def event_message(message):
 if 'mod_actions' in config and config['mod_actions']:
     @bot.event
     async def event_clearchat(data):
+        global config
+        log(f"{data.tags=}")
+
         if 'ban-duration' not in data.tags:
             return
+
+        emotes = config['emote_translator'] if 'emote_translator' in config and config['emote_translator'] else []
 
         id =data.tags['target-user-id']
         messages = message_history.copy()
@@ -242,10 +167,8 @@ if 'mod_actions' in config and config['mod_actions']:
 
         send_message(display_name, f"`user got timed out for {data.tags['ban-duration']} seconds`", get_profile_picture(name))
 
-        log(f"{data.tags=}")
-            
         for message in messages:
-            msg = message.content if not emotes else parse_emotes(message, emotes)
+            msg = message.content if not emotes else parse_emotes(message.content, message.tags, emotes)
             
             send_message(message.author.display_name, msg, get_profile_picture(message.author.name))
 
