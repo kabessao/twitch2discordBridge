@@ -1,9 +1,11 @@
 import os
 import json
+from tkinter.ttk import Separator
 import requests
 import regex as re
 import sys
 from time import sleep
+from datetime import timedelta
 
 # this only translate emotes that twitch says the user can use
 def parse_emotes(message: str, tags: dict, emotes: dict):
@@ -94,3 +96,25 @@ def get_twitch_profile_picture(username, config):
         return json.loads(response.text)["data"][0]["profile_image_url"]
     except:
         return ''
+
+
+def get_duration(seconds):
+    list = str(timedelta(seconds=seconds)).split(":")
+    hours, minutes, seconds = [ int(item) for item in list ]
+    
+    parts = []
+
+    if minutes > 0:
+        parts.append(f"{minutes} minute{'' if minutes == 1 else 's'}")
+    if seconds > 0:
+        parts.append(f"{seconds} second{'' if seconds == 1 else 's'}")
+
+    separator = ", " if len(parts) == 2 else " and "
+
+    if parts:
+        parts = [ " and ".join(parts) ]
+
+    if hours > 0:
+        parts.append(f"{hours} hour{'' if hours == 1 else 's'}")
+
+    return f"{separator}".join(reversed(parts))

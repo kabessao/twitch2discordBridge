@@ -151,10 +151,7 @@ if 'mod_actions' in config and config['mod_actions']:
     @bot.event
     async def event_clearchat(data):
         global config
-        log(f"{data.tags=}")
-
-        if 'ban-duration' not in data.tags:
-            return
+        log(f"{data.tags=}\n\n")
 
         emotes = config['emote_translator'] if 'emote_translator' in config and config['emote_translator'] else []
 
@@ -169,7 +166,13 @@ if 'mod_actions' in config and config['mod_actions']:
         name = messages[0].author.name
         display_name = messages[0].author.display_name
 
-        send_message(display_name, f"`user got timed out for {data.tags['ban-duration']} seconds`", get_profile_picture(name))
+        discord_message = "`user got banned permanently`"
+
+        if 'ban-duration' in data.tags:
+            discord_message = f"`user got timed out for {get_duration(data.tags['ban-duration'])}`"
+
+        send_message(display_name, discord_message, get_profile_picture(name))
+        sleep(1)
 
         for message in messages:
             msg = message.content if not emotes else parse_emotes(message.content, message.tags, emotes)
