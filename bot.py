@@ -69,6 +69,7 @@ filter_messages = config['filter_messages'] if 'filter_messages' in config and c
 show_bit_gifters = config['show_bit_gifters'] if 'show_bit_gifters' in config else False
 show_hyber_chat = config['show_hyber_chat'] if 'show_hyber_chat' in config else False
 prevent_ping = config['prevent_ping'] if 'prevent_ping' in config else True
+blacklist = config['blacklist'] if 'blacklist' in config and config['blacklist'] else []
 
 
 message_history = []
@@ -88,10 +89,13 @@ async def event_message(message):
     log(log_message)
 
     msg = str(message.content)
-    name = str(message.author.display_name)
+    display_name = str(message.author.display_name)
+    name = str(message.author.name)
 
-    if re.match(r'[^\x20-\x7F]',name):
-        name = f'{message.author.name} ({name})'
+    if blacklist and name in blacklist: return
+
+    if re.match(r'[^\x20-\x7F]',display_name):
+        display_name = f'{name} ({display_name})'
 
     message_history.append(message)
 
@@ -108,7 +112,7 @@ async def event_message(message):
             break
 
     for username in filter_usernames:
-        if username == message.author.name:
+        if username == name:
             should_send = True
             break
 
@@ -120,7 +124,7 @@ async def event_message(message):
         msg = re.sub(r"(?<=^|\W)[Cc]heer\d+(\W|$)",'', msg).strip()
         bits = message.tags['bits']
 
-        name = f"{name} gave {bits} bit{'s' if bits > 1 else ''}"
+        display_name = f"{display_name} gave {bits} bit{'s' if bits > 1 else ''}"
  
         should_send = True
 
@@ -131,7 +135,7 @@ async def event_message(message):
 
     if show_hyber_chat and 'pinned-chat-paid-amount' in message.tags:
         bits = message.tags['pinned-chat-paid-amount']
-        name = f"{name} sent a Hype Chat for {bits} bits"
+        display_name = f"{display_name} sent a Hype Chat for {bits} bits"
         should_send = True
 
     if should_send:
@@ -140,7 +144,7 @@ async def event_message(message):
         if prevent_ping:
             msg = re.sub(r"@(?=here|everyone)", '', msg)
 
-        send_message(name, msg, get_profile_picture(message.author.name))
+        send_message(display_name, msg, get_profile_picture(message.author.name))
     
     
 if 'mod_actions' in config and config['mod_actions']:

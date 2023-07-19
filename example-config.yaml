@@ -45,6 +45,11 @@ channel: 'THE CHANNEL NAME'
 #filter_usernames: 
 #  - soundalerts
 
+# Any name in this list will be completely ignored by the bot, no matter the filters applied.
+# It does not apply for mod logs though.
+#blacklist:
+#  - mizkif
+
 # this uses regex. Go nuts 
 #filter_messages:
 #  - '[^\x20-\x7F]' # this regex detects any message that uses non roman characters, like Chinese, Japanese, etc.
