@@ -156,7 +156,7 @@ if 'mod_actions' in config and config['mod_actions']:
         emotes = config['emote_translator'] if 'emote_translator' in config and config['emote_translator'] else []
 
         id =data.tags['target-user-id']
-        messages = message_history.copy()
+        messages = message_history
 
         messages = [ item for item in messages if item.tags['user-id'] == id ]
 
@@ -175,9 +175,14 @@ if 'mod_actions' in config and config['mod_actions']:
         sleep(1)
 
         for message in messages:
+
+            if '___sent' in message.tags: continue
+
             msg = message.content if not emotes else parse_emotes(message.content, message.tags, emotes)
             
             send_message(message.author.display_name, msg, get_profile_picture(message.author.name))
+
+            message.tags['___sent'] = True
 
 
 bot.run()
