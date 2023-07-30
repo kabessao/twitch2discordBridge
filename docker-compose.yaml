@@ -8,10 +8,10 @@ services:
       context: .
       dockerfile: Dockerfile
 
-      args:
-        - CONFIG=${TAG:-config}
+    volumes:
+      - ./${TAG:-config}.yaml:/app/config.yaml:z
 
     restart: always
-    image: twitch2discord-bridge:${TAG:-default}
+    image: twitch2discord-bridge
     container_name: t2d_${TAG:-bot}
     

@@ -16,8 +16,5 @@ ARG CONFIG=config
 # Copy the Python script to the container
 COPY *.py .
 
-# Copy the configuration file to the container
-COPY ${CONFIG}.yaml ./config.yaml
-
 # Set the entry point for the container
 CMD ["python", "bot.py"]
