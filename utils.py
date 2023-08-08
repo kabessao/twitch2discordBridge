@@ -6,6 +6,16 @@ import regex as re
 import sys
 from time import sleep
 from datetime import timedelta
+import yaml
+
+# this bit loads the config file. If not present it prompts the user to create one
+def load_config():
+    try:
+        with open("config.yaml", "r") as config_file:
+            return yaml.safe_load(config_file)
+    except FileNotFoundError:
+        print("Please fill in the required information in a 'config.yaml' file.", file=sys.stderr)
+        quit()
 
 # this only translate emotes that twitch says the user can use
 def parse_emotes(message: str, tags: dict, emotes: dict):
@@ -78,6 +88,27 @@ def send_webhook_message(username, message, url, config):
     }
 
     requests.post(config['webhook_url'], data=json.dumps(payload), headers=headers)
+
+
+# this is responsible for getting the profile picture of of the user
+def get_twitch_profile_name(id, config):
+    url = f"https://api.twitch.tv/helix/users?id={id}"
+
+    payload = {}
+    headers = {
+        'Client-ID': config['twitch_client_id'],
+        'Authorization': f'Bearer {config["oauth_password"]}'
+    }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+
+    try: 
+        name = json.loads(response.text)["data"][0]["login"]
+        username = json.loads(response.text)["data"][0]["display_name"]
+        
+        return name, username
+    except:
+        return ''
 
 
 # this is responsible for getting the profile picture of of the user

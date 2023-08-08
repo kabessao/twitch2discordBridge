@@ -9,15 +9,7 @@ from time import sleep
 
 from utils import *
 
-# this bit loads the config file. If not present it prompts the user to create one
-config = None
-try:
-    with open("config.yaml", "r") as config_file:
-        config = yaml.safe_load(config_file)
-except FileNotFoundError:
-    print("Please fill in the required information in a 'config.yaml' file.", file=sys.stderr)
-    quit()
-
+config = load_config()
 
 manager = Manager()
 config = manager.dict(config)
@@ -163,8 +155,7 @@ if 'mod_actions' in config and config['mod_actions']:
         if not messages:
             return
 
-        name = messages[0].author.name
-        display_name = messages[0].author.display_name
+        name, display_name = get_twitch_profile_name(id, config=config)
 
         discord_message = "`user got banned permanently`"
 
