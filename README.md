@@ -1,4 +1,14 @@
 # twitch2discordBridge
+
+## ATTENTION
+This project is not in development anymore, and was entirely re-written in Golang.
+
+I found a lot of limitations in Python that made things too complex for me to move this forward. You could say it was "skill issues" but honestly I was not enjoying making everything in Python, so I jumped to Golang and never looked back. 
+
+You can check the Golang version in [here](https://github.com/kabessao/Twitch2DiscordBridge-Go/)
+
+## Description
+
 replicates twitch chat into a discord chat through webhooks
 
 for the twitch bit you can go to https://chatterino.com/client_login, copy your credentials, and set them up on the config file
